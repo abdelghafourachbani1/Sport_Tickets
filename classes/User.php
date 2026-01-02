@@ -1,150 +1,155 @@
 <?php
 
+require_once __DIR__ . '../config/database.php';
+
 abstract class User {
+
     protected $id;
     protected $nom;
     protected $prenom;
     protected $email;
-    protected $motDePasse;
-    protected $telephone;
-    protected $dateInscription;
-    protected $actif;
+    protected $passwordHash;
+    protected $status;
     protected $role;
 
-    /**
-     * Constructeur
-     */
-    public function __construct($nom, $prenom, $email, $motDePasse, $telephone = null)
+    public function __construct($nom, $prenom, $email, $password, $status)
     {
         $this->nom = $nom;
         $this->prenom = $prenom;
         $this->email = $email;
-        $this->motDePasse = password_hash($motDePasse, PASSWORD_DEFAULT);
-        $this->telephone = $telephone;
-        $this->dateInscription = date('Y-m-d H:i:s');
-        $this->actif = true;
+        $this->passwordHash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
+        $this->status = 'actif';
     }
 
-    // ========== GETTERS ==========
-    public function getId()
-    {
-        return $this->id;
-    }
-    public function getNom()
-    {
-        return $this->nom;
-    }
-    public function getPrenom()
-    {
-        return $this->prenom;
-    }
-    public function getEmail()
-    {
-        return $this->email;
-    }
-    public function getTelephone()
-    {
-        return $this->telephone;
-    }
-    public function getDateInscription()
-    {
-        return $this->dateInscription;
-    }
-    public function isActif()
-    {
-        return $this->actif;
-    }
-    public function getRole()
-    {
-        return $this->role;
-    }
-    public function getMotDePasse()
-    {
-        return $this->motDePasse;
-    }
+    abstract public function getPermission();
 
-    // ========== SETTERS ==========
-    public function setId($id)
-    {
-        $this->id = $id;
-    }
-    public function setNom($nom)
-    {
-        $this->nom = $nom;
-    }
-    public function setPrenom($prenom)
-    {
-        $this->prenom = $prenom;
-    }
-    public function setEmail($email)
-    {
-        $this->email = $email;
-    }
-    public function setTelephone($telephone)
-    {
-        $this->telephone = $telephone;
-    }
-    public function setActif($actif)
-    {
-        $this->actif = $actif;
-    }
+    public function login($email, $password) {
+        try {
+            $db = Database::getInstance()->getConnection();
 
-    // ========== MÉTHODES ABSTRAITES (Polymorphisme) ==========
-    abstract public function getDashboardUrl();
+            $query = "SELECT * FROM users WHERE email = :email AND status = 'actif' LIMIT 1";
+            $stmt = $db->prepare($query);
+            $stmt->execute([
+                ':email' => $email
+            ]);
 
-    // ========== MÉTHODES CONCRÈTES ==========
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    /**
-     * Vérifie si le mot de passe correspond
-     */
-    public function verifierMotDePasse($motDePasse)
-    {
-        return password_verify($motDePasse, $this->motDePasse);
-    }
+            if ($user && password_verify($password, $user['password'])) {
+                $this->id = $user['id'];
+                $this->nom = $user['nom'];
+                $this->prenom = $user['prenom'];
+                $this->email = $user['email'];
+                $this->passwordHash = $user['password'];
+                $this->role = $user['role'];
+                $this->status = $user['status'];
 
-    /**
-     * Change le mot de passe
-     */
-    public function changerMotDePasse($ancienMdp, $nouveauMdp)
-    {
-        if ($this->verifierMotDePasse($ancienMdp)) {
-            $this->motDePasse = password_hash($nouveauMdp, PASSWORD_DEFAULT);
-            return true;
+                if (session_status() === PHP_SESSION_NONE) {
+                    session_start();
+                }
+                $_SESSION['user_id'] = $this->id;
+                $_SESSION['user_role'] = $this->role;
+                $_SESSION['user_email'] = $this->email;
+                $_SESSION['user_nom'] = $this->nom . '' . $this->prenom;
+
+                return true;
+            }
+            return false;
+        } catch (PDOException $e) {
+            error_log("error de cnx : " . $e->getMessage());
+            return false;
         }
-        return false;
     }
 
-    /**
-     * Met à jour le profil
-     */
-    public function updateProfile($nom, $prenom, $email, $telephone)
-    {
-        $this->nom = $nom;
-        $this->prenom = $prenom;
-        $this->email = $email;
-        $this->telephone = $telephone;
+    public function logout() {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        $_SESSION = array();
+        session_destroy();
     }
 
-    /**
-     * Retourne le nom complet
-     */
-    public function getNomComplet()
-    {
-        return $this->prenom . ' ' . $this->nom;
+    public function updateProfile(array $data) {
+        try {
+            $db = Database::getInstance()->getConnection();
+
+            $fields = [];
+            $params = [':id' => $this->id];
+
+            if (!empty($data['nom'])) {
+                $fields[] = 'nom = :nom';
+                $params[':nom'] = $data['nom'];
+                $this->nom = $data['nom'];
+            }
+
+            if (!empty($data['prenom'])) {
+                $fields[] = 'prenom = :prenom';
+                $params[':prenom'] = $data['prenom'];
+                $this->prenom = $data['prenom'];
+            }
+
+            if (!empty($data['email'])) {
+                $checkQuery = 'SELECT id FROM users WHERE email = :email AND id != :id';
+                $checkStmt = $db->prepare($checkQuery);
+                $checkStmt->execute([
+                    ':email' => $data['email'],
+                    ':id'    => $this->id
+                ]);
+
+                if ($checkStmt->rowCount() > 0) {
+                    throw new Exception('cette email deja utilise');
+                }
+
+                $fields[] = 'email = :email';
+                $params[':email'] = $data['email'];
+                $this->email = $data['email'];
+            }
+
+            if (!empty($data['password'])) {
+                $fields[] = 'password = :password';
+                $params[':password'] = password_hash($data['password'],PASSWORD_BCRYPT,['cost' => 12]);
+            }
+
+            if (empty($fields)) {
+                return false;
+            }
+
+            $query = 'UPDATE users SET ' . implode(', ', $fields) . ' WHERE id = :id';
+            $stmt = $db->prepare($query);
+
+            return $stmt->execute($params);
+        } catch (PDOException $e) {
+            error_log('error update profile : ' . $e->getMessage());
+            return false;
+        }
     }
+
+
+    public function save() {
+        try {
+            $db = Database::getInstance()->getConnection();
+            $query = "INSERT INTO users (nom, prenom, email, password, role, statuts) 
+                    VALUES (:nom, :prenom, :email, :password, :role, :statut)";
+
+            $stmt = $db->prepare($query);
+            $stmt->bindParam(':nom', $this->nom);
+            $stmt->bindParam(':prenom', $this->prenom);
+            $stmt->bindParam(':email', $this->email);
+            $stmt->bindParam(':password', $this->passwordHash);
+            $stmt->bindParam(':role', $this->role);
+            $stmt->bindParam(':statuts', $this->status);
+
+            if ($stmt->execute()) {
+                $this->id = $db->lastInsertId();
+                return true;
+            }
+
+            return false;
+
+        } catch (PDOException $e) {
+            error_log("error ". $e->getMessage());
+            return false;
+        }
+    }
+
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
