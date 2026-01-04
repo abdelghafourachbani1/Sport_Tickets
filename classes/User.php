@@ -12,13 +12,12 @@ abstract class User {
     protected $status;
     protected $role;
 
-    public function __construct($nom, $prenom, $email, $password, $status)
-    {
+    public function __construct($nom, $prenom, $email, $password, $status) {
         $this->nom = $nom;
         $this->prenom = $prenom;
         $this->email = $email;
         $this->passwordHash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
-        $this->status = 'actif';
+        $this->status = $status;
     }
 
     abstract public function getPermission();
@@ -29,9 +28,7 @@ abstract class User {
 
             $query = "SELECT * FROM users WHERE email = :email AND status = 'actif' LIMIT 1";
             $stmt = $db->prepare($query);
-            $stmt->execute([
-                ':email' => $email
-            ]);
+            $stmt->execute([':email' => $email]);
 
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
