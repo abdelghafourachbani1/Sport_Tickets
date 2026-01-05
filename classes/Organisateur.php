@@ -12,7 +12,7 @@ class Organisateur extends User {
 
     public function __construct(string $nom, string $prenom, string $email, string $password) {
         parent::__construct($nom, $prenom, $email, $password);
-        $this->setRole('organisateur');
+        $this->role = 'organisateur';
         $this->matches_crees = [];
         $this->statut_validation = 'en_attente';
     }

@@ -4,7 +4,6 @@ require_once __DIR__ . '/../config/setup.php';
 $error = '';
 $success = '';
 
-// Si déjà connecté, rediriger selon le rôle
 if (isset($_SESSION['user_id'])) {
     $role = $_SESSION['user_role'];
     switch ($role) {
@@ -21,7 +20,6 @@ if (isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Traitement du formulaire
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = Validation::sanitizeInput($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
@@ -30,11 +28,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = "Veuillez remplir tous les champs.";
     } else {
         try {
-            // Créer un utilisateur temporaire pour le login
             $tempUser = new Acheteur('', '', $email, '');
 
             if ($tempUser->login($email, $password)) {
-                // Redirection selon le rôle
                 $role = $_SESSION['user_role'];
                 switch ($role) {
                     case 'admin':
