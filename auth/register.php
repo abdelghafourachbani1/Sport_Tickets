@@ -5,14 +5,12 @@ $error = '';
 $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Récupérer et nettoyer les données
-    $nom = Validation::sanitizeInput($_POST['nom'] ?? '');
-    $prenom = Validation::sanitizeInput($_POST['prenom'] ?? '');
-    $email = Validation::sanitizeInput($_POST['email'] ?? '');
+    $nom = $_POST['nom'];
+    $prenom = $_POST['prenom'];
+    $email = $_POST['email'] ;
     $password = $_POST['password'] ?? '';
     $confirmPassword = $_POST['confirm_password'] ?? '';
 
-    // Validation
     if (empty($nom) || empty($prenom) || empty($email) || empty($password)) {
         $error = "Tous les champs sont obligatoires.";
     } elseif (!Validation::validerNom($nom) || !Validation::validerNom($prenom)) {
@@ -25,15 +23,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = "Les mots de passe ne correspondent pas.";
     } else {
         try {
-            // Créer un nouvel acheteur
             $acheteur = new Acheteur($nom, $prenom, $email, $password);
 
             if ($acheteur->save()) {
-                // Envoyer email de confirmation
-                $emailService = new EmailService();
-                $emailService->envoyerConfirmationInscription($email, $nom . ' ' . $prenom);
-
-                // Rediriger vers la page de connexion
+                // $emailService = new EmailService();
+                // $emailService->envoyerConfirmationInscription($email, $nom . ' ' . $prenom);
                 header('Location: login.php?registered=1');
                 exit;
             } else {

@@ -89,7 +89,7 @@ class Organisateur extends User {
         }
     }
 
-    private function validerDonneesMatch(array $data): bool {
+    private function validerDonneesMatch(array $data) {
         $champsRequis = [
             'equipe_domicile_nom', 
             'equipe_exterieur_nom',
@@ -122,7 +122,7 @@ class Organisateur extends User {
         return true;
     }
 
-    public function consulterStatistiques(int $matchId): array {
+    public function consulterStatistiques(int $matchId) {
         try {
             require_once __DIR__ . '/../config/database.php';
             $db = Database::getInstance()->getConnection();
@@ -186,7 +186,7 @@ class Organisateur extends User {
         }
     }
 
-    public function consulterCommentaires(int $matchId): array {
+    public function consulterCommentaires(int $matchId) {
         try {
             require_once __DIR__ . '/../config/database.php';
             $db = Database::getInstance()->getConnection();
@@ -213,7 +213,7 @@ class Organisateur extends User {
         }
     }
 
-    public function modifierMatch(int $matchId, array $newData): bool {
+    public function modifierMatch(int $matchId, array $newData) {
         try {
             require_once __DIR__ . '/../config/database.php';
             $db = Database::getInstance()->getConnection();
@@ -265,7 +265,7 @@ class Organisateur extends User {
         }
     }
 
-    private function verifierProprietaireMatch(int $matchId): bool {
+    private function verifierProprietaireMatch(int $matchId) {
         try {
             $db = Database::getInstance()->getConnection();
 
@@ -285,7 +285,7 @@ class Organisateur extends User {
         }
     }
 
-    public function getMesMatches(string $filtre = 'tous'): array {
+    public function getMesMatches(string $filtre = 'tous') {
         try {
             require_once __DIR__ . '/../config/database.php';
             $db = Database::getInstance()->getConnection();
@@ -322,7 +322,7 @@ class Organisateur extends User {
         }
     }
 
-    public function getDashboard(): array {
+    public function getDashboard() {
         try {
             $db = Database::getInstance()->getConnection();
 
@@ -375,7 +375,7 @@ class Organisateur extends User {
         }
     }
 
-    public function supprimerMatch(int $matchId): bool {
+    public function supprimerMatch(int $matchId) {
         try {
             $db = Database::getInstance()->getConnection();
 
@@ -405,4 +405,5 @@ class Organisateur extends User {
             throw $e;
         }
     }
+
 }

@@ -2,165 +2,66 @@
 
 class Validation {
 
-    public static function validerEmail(string $email): bool
-    {
-        // Vérifier le format de l'email
+    public static function validerEmail($email){
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return false;
         }
-
-        // Vérifier que le domaine existe
-        $domain = substr(strrchr($email, "@"), 1);
-        if (!checkdnsrr($domain, "MX")) {
-            return false;
-        }
-
         return true;
     }
 
-    public static function validerMotDePasse(string $password): bool
-    {
-        // Minimum 8 caractères
+    public static function validerMotDePasse($password) {
         if (strlen($password) < 8) {
             return false;
         }
-
-        // Au moins une lettre majusculea
-        if (!preg_match('/[A-Z]/', $password)) {
-            return false;
-        }
-
-        // Au moins un chiffre
-        if (!preg_match('/[0-9]/', $password)) {
-            return false;
-        }
-
-        // Au moins une lettre minuscule
-        if (!preg_match('/[a-z]/', $password)) {
-            return false;
-        }
-
         return true;
     }
 
-    public static function getExigencesMotDePasse(): array
-    {
-        return [
-            'Au moins 8 caractères',
-            'Au moins une lettre majuscule',
-            'Au moins une lettre minuscule',
-            'Au moins un chiffre'
-        ];
+    public static function getExigencesMotDePasse() {
+        return 'au moins 8 caracter';
     }
 
-    public static function validerNombrePlace(int $nombre): bool
-    {
+    public static function validerNombrePlace($nombre) {
         return $nombre >= 1 && $nombre <= 4;
     }
 
-    public static function validerDate(DateTime $date): bool
-    {
+    public static function validerDate(DateTime $date) {
         $now = new DateTime();
         return $date > $now;
     }
 
-    public static function validerPrix(float $prix): bool
-    {
+    public static function validerPrix($prix) {
         return $prix > 0;
     }
 
-    public static function sanitizeInput(string $input): string
-    {
-        // Supprimer les espaces en début et fin
-        $input = trim($input);
-
-        // Supprimer les slashes
-        $input = stripslashes($input);
-
-        // Convertir les caractères spéciaux en entités HTML
-        $input = htmlspecialchars($input, ENT_QUOTES, 'UTF-8');
-
-        return $input;
-    }
-
-    public static function validerNom(string $nom): bool
-    {
-        // Minimum 2 caractères, maximum 50
-        if (strlen($nom) < 2 || strlen($nom) > 50) {
+    public static function validerNom($nom) {
+        if (strlen($nom) < 8) {
             return false;
         }
-
-        // Seulement lettres, espaces, tirets et apostrophes
-        return preg_match("/^[a-zA-ZÀ-ÿ\s\-']+$/u", $nom);
+        return true;
     }
 
-    public static function validerTelephone(string $telephone): bool
-    {
-        // Format: 10 chiffres ou format international
+    public static function validerTelephone($telephone) {
         return preg_match("/^(\+\d{1,3}[- ]?)?\d{10}$/", $telephone);
     }
 
-    public static function validerPlacesTotales(int $places): bool
-    {
+    public static function validerPlacesTotales($places) {
         return $places >= 1 && $places <= 2000;
     }
 
-    public static function validerNote(int $note): bool
-    {
+    public static function validerNote($note) {
         return $note >= 1 && $note <= 5;
     }
 
-    public static function validerImage(array $file, int $maxSize = 2097152): array
-    {
-        $result = ['valid' => true, 'error' => ''];
-
-        // Vérifier qu'un fichier a été uploadé
-        if (!isset($file['tmp_name']) || empty($file['tmp_name'])) {
-            return ['valid' => false, 'error' => 'Aucun fichier uploadé'];
-        }
-
-        // Vérifier les erreurs d'upload
-        if ($file['error'] !== UPLOAD_ERR_OK) {
-            return ['valid' => false, 'error' => 'Erreur lors de l\'upload du fichier'];
-        }
-
-        // Vérifier la taille
-        if ($file['size'] > $maxSize) {
-            return ['valid' => false, 'error' => 'Le fichier est trop volumineux (max 2MB)'];
-        }
-
-        // Vérifier le type MIME
-        $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mimeType = finfo_file($finfo, $file['tmp_name']);
-        finfo_close($finfo);
-
-        if (!in_array($mimeType, $allowedTypes)) {
-            return ['valid' => false, 'error' => 'Type de fichier non autorisé (JPG, PNG, GIF uniquement)'];
-        }
-
-        // Vérifier que c'est bien une image
-        if (!getimagesize($file['tmp_name'])) {
-            return ['valid' => false, 'error' => 'Le fichier n\'est pas une image valide'];
-        }
-
-        return $result;
-    }
-
-    public static function validerTexte(string $texte, int $minLength = 10, int $maxLength = 1000): bool
-    {
+    public static function validerTexte($texte, $minLength = 10, $maxLength = 1000) {
         $length = strlen(trim($texte));
         return $length >= $minLength && $length <= $maxLength;
     }
 
-    public static function validerCodePostal(string $codePostal): bool
-    {
-        // Format: 5 chiffres
+    public static function validerCodePostal(string $codePostal) {
         return preg_match("/^\d{5}$/", $codePostal);
     }
 
-    public static function detecterInjectionSQL(string $input): bool
-    {
+    public static function detecterInjectionSQL($input) {
         $patterns = [
             '/(\bSELECT\b|\bINSERT\b|\bUPDATE\b|\bDELETE\b|\bDROP\b|\bUNION\b)/i',
             '/--/',
@@ -178,13 +79,11 @@ class Validation {
         return false;
     }
 
-    public static function validerURL(string $url): bool
-    {
+    public static function validerURL(string $url) {
         return filter_var($url, FILTER_VALIDATE_URL) !== false;
     }
 
-    public static function genererMessageErreur(string $champ, string $type): string
-    {
+    public static function genererMessageErreur($champ, $type) {
         $messages = [
             'required' => "Le champ {$champ} est requis.",
             'email' => "L'adresse email n'est pas valide.",
@@ -201,14 +100,12 @@ class Validation {
         return $messages[$type] ?? "Le champ {$champ} n'est pas valide.";
     }
 
-    public static function validerFormulaire(array $data, array $rules): array
-    {
+    public static function validerFormulaire(array $data, array $rules) {
         $errors = [];
 
         foreach ($rules as $field => $rule) {
             $value = $data[$field] ?? '';
 
-            // Champ requis
             if (isset($rule['required']) && $rule['required'] && empty($value)) {
                 $errors[$field] = self::genererMessageErreur($field, 'required');
                 continue;

@@ -1,5 +1,6 @@
 <?php
-require_once __DIR__ . '/../config/setup.php';
+
+require_once  __DIR__ . '/login.php';
 
 $error = '';
 $success = '';
@@ -21,8 +22,8 @@ if (isset($_SESSION['user_id'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = Validation::sanitizeInput($_POST['email'] ?? '');
-    $password = $_POST['password'] ?? '';
+    $email = $_POST['email'];
+    $password = $_POST['password'];
 
     if (empty($email) || empty($password)) {
         $error = "Veuillez remplir tous les champs.";
@@ -33,15 +34,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($tempUser->login($email, $password)) {
                 $role = $_SESSION['user_role'];
                 switch ($role) {
-                    case 'admin':
-                        header('Location: ../admin/dashboard.php');
-                        break;
-                    case 'organisateur':
-                        header('Location: ../organizer/create_match.php');
-                        break;
-                    case 'acheteur':
-                        header('Location: ../pages/home.php');
-                        break;
+                    case 'admin': header('Location: ../admin/dashboard.php'); break;
+                    case 'organisateur': header('Location: ../organizer/create_match.php');break;
+                    case 'acheteur': header('Location: ../pages/home.php'); break;
                 }
                 exit;
             } else {

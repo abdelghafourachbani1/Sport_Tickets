@@ -121,11 +121,10 @@ abstract class User {
         }
     }
 
-
     public function save() {
         try {
             $db = Database::getInstance()->getConnection();
-            $query = "INSERT INTO users (nom, prenom, email, password, role, statuts) 
+            $query = "INSERT INTO users (nom, prenom, email, password, role, statut) 
                     VALUES (:nom, :prenom, :email, :password, :role, :statut)";
 
             $stmt = $db->prepare($query);
@@ -134,7 +133,7 @@ abstract class User {
             $stmt->bindParam(':email', $this->email);
             $stmt->bindParam(':password', $this->passwordHash);
             $stmt->bindParam(':role', $this->role);
-            $stmt->bindParam(':statuts', $this->status);
+            $stmt->bindParam(':statut', $this->status);
 
             if ($stmt->execute()) {
                 $this->id = $db->lastInsertId();
